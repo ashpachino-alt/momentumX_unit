@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Momentum X — Финансовая модель</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#FAFAF8;--bg2:#F3F2EE;--bg3:#ECEAE4;
+  --text:#1A1A18;--muted:#6B6960;--hint:#A8A69E;
+  --gold:#B8912A;--gold-bg:#FDF8EE;--gold-border:#E8D5A0;
+  --green:#1A7A52;--green-bg:#EDF7F2;
+  --red:#C0392B;--red-bg:#FDF0EE;
+  --blue:#1A5FA8;--blue-bg:#EEF4FD;
+  --border:#DEDAD2;--border2:#C8C4B8;
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.65}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,250,248,0.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2.5rem;height:54px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-size:15px;font-weight:600;letter-spacing:.04em;color:var(--gold)}
+.nav-links{display:flex;gap:2rem}
+.nav-links a{font-size:12px;color:var(--muted);text-decoration:none;letter-spacing:.04em}
+.nav-links a:hover{color:var(--text)}
+
+.wrap{max-width:1020px;margin:0 auto;padding:0 2.5rem}
+section{padding:5rem 0}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.sec-title{font-size:clamp(26px,3.5vw,40px);font-weight:600;line-height:1.15;margin-bottom:14px;color:var(--text)}
+.sec-body{font-size:15px;color:var(--muted);max-width:620px;line-height:1.75;margin-bottom:32px}
+hr.div{border:none;border-top:1px solid var(--border);margin:0}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:54px;background:var(--bg)}
+.hero-inner{max-width:1020px;margin:0 auto;padding:0 2.5rem;width:100%}
+.hero-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:24px;display:flex;align-items:center;gap:10px}
+.hero-label::before{content:'';width:28px;height:1px;background:var(--gold);opacity:.5}
+.hero-title{font-size:clamp(52px,9vw,112px);font-weight:700;line-height:.95;letter-spacing:-.02em;margin-bottom:6px;color:var(--text)}
+.hero-title .x{color:var(--gold)}
+.hero-sub{font-size:clamp(16px,2vw,22px);color:var(--muted);margin-top:16px;max-width:540px;line-height:1.6;margin-bottom:48px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;width:fit-content}
+.kpi{padding:16px 24px;background:var(--bg)}
+.kpi-val{font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.kpi-lbl{font-size:11px;color:var(--hint);margin-top:4px;letter-spacing:.04em}
+.hero-note{margin-top:40px;font-size:12px;color:var(--hint);letter-spacing:.06em}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px}
+.card-sm{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* METRIC CARDS */
+.mc{background:var(--bg2);border-radius:var(--radius-sm);padding:14px 16px}
+.mc .ml{font-size:11px;color:var(--muted);margin-bottom:4px;letter-spacing:.04em}
+.mc .mv{font-size:22px;font-weight:600;color:var(--text)}
+.mc .ms{font-size:11px;color:var(--hint);margin-top:2px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:11px;font-weight:500;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);letter-spacing:.04em;white-space:nowrap}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--bg3);color:var(--text);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg2)}
+.tbl .total td{background:var(--bg2);font-weight:600;border-bottom:none}
+.pos{color:var(--green);font-weight:500}
+.neg{color:var(--red);font-weight:500}
+.warn{color:#B05A00}
+
+/* BADGE */
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+.b-gold{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-border)}
+.b-green{background:var(--green-bg);color:var(--green)}
+.b-red{background:var(--red-bg);color:var(--red)}
+.b-blue{background:var(--blue-bg);color:var(--blue)}
+.b-gray{background:var(--bg3);color:var(--muted)}
+
+/* ROUND CARDS */
+.round-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.rc{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:22px;position:relative;overflow:hidden}
+.rc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.rc.r1::before{background:var(--green)}
+.rc.r2::before{background:var(--blue)}
+.rc.r3::before{background:var(--gold)}
+.rc-tag{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.rc-amount{font-size:28px;font-weight:700;color:var(--text);margin-bottom:3px}
+.rc-share{font-size:12px;color:var(--gold);margin-bottom:16px}
+.rc-items{display:flex;flex-direction:column;gap:7px}
+.rc-item{font-size:12px;color:var(--muted);padding-left:12px;border-left:2px solid var(--border2)}
+.rc-item strong{color:var(--text);display:block;font-size:12px;font-weight:500}
+.rc-footer{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.6}
+.rc-footer strong{color:var(--green)}
+
+/* PARTNER TABLE */
+.partner-grid{display:grid;grid-template-columns:180px repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:13px}
+.pg-cell{background:#fff;padding:12px 16px}
+.pg-cell.head{background:var(--bg2);font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.04em}
+.pg-cell.label{background:var(--bg2);font-weight:500;font-size:12px;color:var(--text)}
+.pg-cell.r1c{border-left:3px solid var(--green)}
+.pg-cell.r2c{border-left:3px solid var(--blue)}
+.pg-cell.r3c{border-left:3px solid var(--gold)}
+
+/* RISK BOX */
+.risk-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.risk-box{border-radius:var(--radius-sm);padding:14px 16px}
+.risk-green{background:var(--green-bg)}
+.risk-green p{font-size:12px;color:var(--green);line-height:1.65}
+.risk-red{background:var(--red-bg)}
+.risk-red p{font-size:12px;color:var(--red);line-height:1.65}
+
+/* CHART WRAP */
+.chart-box{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px}
+
+/* TAX */
+.tax-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.tax-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.tax-card.recommended{border:2px solid var(--green)}
+.tax-rec{font-size:10px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;letter-spacing:.04em}
+.tax-name{font-size:16px;font-weight:600;margin-bottom:4px}
+.tax-rate{font-size:28px;font-weight:700;color:var(--text);margin-bottom:12px}
+.tax-items{display:flex;flex-direction:column;gap:6px}
+.tax-item{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:baseline}
+.tax-item::before{content:'—';color:var(--hint);flex-shrink:0}
+
+/* LEGAL */
+.legal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.legal-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.legal-name{font-size:15px;font-weight:600;margin-bottom:12px}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:2.5rem;display:flex;justify-content:space-between;align-items:center}
+footer p{font-size:11px;color:var(--hint)}
+footer .brand{font-size:14px;font-weight:600;color:var(--gold);letter-spacing:.06em}
+
+@media(max-width:768px){
+  nav{padding:0 1.2rem}
+  .nav-links{display:none}
+  .wrap{padding:0 1.2rem}
+  .kpi-row,.round-cards,.g2,.g3,.g4,.partner-grid,.risk-row,.tax-compare,.legal-grid{grid-template-columns:1fr}
+  .pg-cell.r1c,.pg-cell.r2c,.pg-cell.r3c{border-left:none}
+  .hero-inner{padding:0 1.2rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">MOMENTUM X · Финансовая модель</div>
+  <div class="nav-links">
+    <a href="#unit">Юнит-экономика</a>
+    <a href="#rounds">Раунды</a>
+    <a href="#forecast">Прогноз</a>
+    <a href="#partner">Партнёрство</a>
+    <a href="#tax">Налоги</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-label">Конфиденциально · Финансовая модель · 2026</div>
+    <div class="hero-title">MOMENTUM<span class="x"> X</span></div>
+    <div class="hero-title" style="font-size:clamp(22px,3vw,38px);font-weight:400;color:var(--muted);margin-top:8px">Инвестиционная математика</div>
+    <p class="hero-sub">Три раунда. Доказанная юнит-экономика. Прозрачная структура партнёрства. 100% операционного управления на стороне основателя.</p>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val">373 ₽</div><div class="kpi-lbl">прибыль с флакона</div></div>
+      <div class="kpi"><div class="kpi-val">683 шт</div><div class="kpi-lbl">точка безубыточности</div></div>
+      <div class="kpi"><div class="kpi-val">7,8 млн</div><div class="kpi-lbl">три раунда итого</div></div>
+      <div class="kpi"><div class="kpi-val">М3</div><div class="kpi-lbl">выход в плюс</div></div>
+    </div>
+    <p class="hero-note">Финансовый партнёр получает дивиденды · Нулевое участие в операционке · Полная ежемесячная отчётность</p>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- UNIT ECONOMICS -->
+<section id="unit">
+<div class="wrap">
+  <div class="eyebrow">Юнит-экономика</div>
+  <h2 class="sec-title">Математика одного флакона</h2>
+  <p class="sec-body">Цена продавца 767 ₽ · Покупатель платит 499 ₽ · Разницу покрывает Ozon (механика СПП). Своё производство с первого дня — себестоимость в 2,5 раза ниже контрактника.</p>
+
+  <div class="g4" style="margin-bottom:16px">
+    <div class="mc"><div class="ml">Тара + помпа</div><div class="mv">36,49 ₽</div><div class="ms">от 2 000 шт</div></div>
+    <div class="mc"><div class="ml">Сырьё + отдушка 1%</div><div class="mv">63,60 ₽</div><div class="ms">своё произ-во</div></div>
+    <div class="mc"><div class="ml">Этикетка + коробка</div><div class="mv">38,00 ₽</div><div class="ms">20 + 18 ₽</div></div>
+    <div class="mc"><div class="ml">Труд (разлив + упаковка)</div><div class="mv">22,00 ₽</div><div class="ms">сдельно</div></div>
+  </div>
+
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Статья</th><th>₽/шт</th><th>% от цены продавца</th><th>Комментарий</th></tr></thead>
+      <tbody>
+        <tr><td>Себестоимость производства</td><td>160</td><td>20,9%</td><td>сырьё + тара + этикетка + коробка + труд</td></tr>
+        <tr><td>Комиссия Ozon 22%</td><td>169</td><td>22,0%</td><td>от цены продавца 767 ₽</td></tr>
+        <tr><td>Логистика FBO</td><td>65</td><td>8,5%</td><td>приёмка + хранение + доставка</td></tr>
+        <tr class="total"><td>Итого расходов</td><td>394</td><td>51,4%</td><td></td></tr>
+        <tr><td style="color:var(--green);font-weight:600">Валовая прибыль с флакона</td><td class="pos">373 ₽</td><td class="pos">48,6%</td><td>до вычета постоянных расходов</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="g2" style="margin-top:14px">
+    <div class="card">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em;text-transform:uppercase">Постоянные расходы / мес</p>
+      <table class="tbl">
+        <tr><td>Менеджер Ozon (оклад + KPI)</td><td style="text-align:right;font-weight:500">75 000 ₽</td></tr>
+        <tr><td>Маркетинг (блогеры + Telegram)</td><td style="text-align:right;font-weight:500">180 000 ₽</td></tr>
+        <tr class="total"><td>Итого постоянных</td><td style="text-align:right">255 000 ₽</td></tr>
+      </table>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:8px">
+      <p style="font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">Точка безубыточности</p>
+      <p style="font-size:48px;font-weight:700;color:var(--text)">683</p>
+      <p style="font-size:14px;color:var(--muted)">шт / месяц</p>
+      <p style="font-size:12px;color:var(--hint)">255 000 ÷ 373 = 683 шт</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px;background:var(--gold-bg);border-color:var(--gold-border)">
+    <p style="font-size:12px;color:var(--gold);margin-bottom:4px;font-weight:500">Сравнение: своё производство vs контрактник</p>
+    <p style="font-size:13px;color:var(--muted);line-height:1.65">Контрактник берёт 176,71 ₽/л (без тары). Своё производство — 63,60 ₽/л. Экономия <strong style="color:var(--text)">113 ₽ на каждом флаконе</strong>. На первой партии 3 000 шт — это <strong style="color:var(--text)">339 000 ₽ экономии</strong>. Именно поэтому оборудование закупается в Раунде 1.</p>
+  </div>
+</div>
+</section>
+
+<hr class="div">
+
+<!-- ROUNDS -->
+<section id="rounds">
+<div class="wrap">
+  <div class="eyebrow">Инвестиционные раунды</div>
+  <h2 class="sec-title">Три раунда. Нарастающая доля.</h2>
+  <p class="sec-body">Инвестор входит поэтапно по мере доказанных результатов. Каждый раунд — конкретная смета, конкретная цель, конкретная доля.</p>
+
+  <div class="round-cards">
+    <div class="rc r1">
+      <div class="rc-tag">Раунд 1 — Запуск</div>
+      <div class="rc-amount">2 000 000 ₽</div>
+      <div class="rc-share">Доля финансового партнёра: 10%</div>
+      <div class="rc-items">
+        <div class="rc-item"><strong>Оборудование</strong>Котлы, разлив, этикетировщик × 2, очистка воды — 410 000 ₽</div>
+        <div class="rc-item"><strong>Производство 3 000 шт</strong>Сырьё + тара + этикетка + коробка — 414 270 ₽</div>
+        <div class="rc-item"><strong>Труд (варка + упаковка)</strong>Сдельно по дням — 66 000 ₽</div>
+        <div class="rc-item"><strong>Менеджер Ozon × 3 мес</strong>Оклад 50к + KPI 25к — 225 000 ₽</div>
+        <div class="rc-item"><strong>Маркетинг × 3 мес</strong>10 блогеров + 10 TG-каналов + Ozon — 540 000 ₽</div>
+        <div class="rc-item"><strong>Дизайн + фото</strong>Карточки, этикетки — 30 000 ₽</div>
+        <div class="rc-item"><strong>Сертификация + бренд</strong>Декларация + Роспатент — 100 000 ₽</div>
+        <div class="rc-item"><strong>Резерв безопасности</strong>Буфер на отставание от плана — 214 730 ₽</div>
+      </div>
+      <div class="rc-footer">Цель: продать 3 000 шт за 2 мес<br>Выход в плюс: <strong>месяц 3</strong></div>
+    </div>
+    <div class="rc r2">
+      <div class="rc-tag">Раунд 2 — Масштаб</div>
+      <div class="rc-amount">2 200 000 ₽</div>
+      <div class="rc-share">Доля финансового партнёра: +10% (итого 20%)</div>
+      <div class="rc-items">
+        <div class="rc-item"><strong>Производство 6 000 шт</strong>Сырьё + тара + этикетка + коробка — 828 540 ₽</div>
+        <div class="rc-item"><strong>Труд (варка + упаковка)</strong>Сдельно — 132 000 ₽</div>
+        <div class="rc-item"><strong>Менеджер Ozon × 3 мес</strong>225 000 ₽</div>
+        <div class="rc-item"><strong>Маркетинг агрессивный × 3 мес</strong>20 блогеров + каналы + Ozon — 750 000 ₽</div>
+        <div class="rc-item"><strong>Резерв безопасности</strong>264 460 ₽</div>
+      </div>
+      <div class="rc-footer">Цель: 2 000–2 500 шт/мес к декабрю<br>Пик продаж: <strong>НГ + февраль</strong></div>
+    </div>
+    <div class="rc r3">
+      <div class="rc-tag">Раунд 3 — Производство</div>
+      <div class="rc-amount">3 600 000 ₽</div>
+      <div class="rc-share">Доля финансового партнёра: +10% (итого 30%)</div>
+      <div class="rc-items">
+        <div class="rc-item"><strong>Производство 15 000 шт</strong>Сырьё + тара + этикетка + коробка — 1 425 000 ₽</div>
+        <div class="rc-item"><strong>Труд (варка + упаковка)</strong>330 000 ₽</div>
+        <div class="rc-item"><strong>Менеджер Ozon × 6 мес</strong>450 000 ₽</div>
+        <div class="rc-item"><strong>Маркетинг федеральный</strong>Амбассадоры + турниры — 1 000 000 ₽</div>
+        <div class="rc-item"><strong>Сертификация доп. SKU + бренд</strong>100 000 ₽</div>
+        <div class="rc-item"><strong>Резерв безопасности</strong>295 000 ₽</div>
+      </div>
+      <div class="rc-footer">Цель: 5 000+ шт/мес<br>Оборудование апгрейд: <strong>за скобками*</strong></div>
+    </div>
+  </div>
+
+  <p style="font-size:11px;color:var(--hint);margin-bottom:24px">* Стальные реакторы + очистка воды ~1 000 000 ₽ — обсуждается отдельно по результату Раунда 2</p>
+
+  <div class="chart-box">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;letter-spacing:.04em;text-transform:uppercase">Структура расходов по раундам</p>
+    <div style="position:relative;width:100%;height:280px">
+      <canvas id="roundsChart" role="img" aria-label="Структура расходов трёх раундов: производство, маркетинг, команда, оборудование, резерв">Раунд 1: оборудование 21%, производство 21%, маркетинг 27%, команда 11%, прочее 20%. Раунд 2: производство 43%, маркетинг 34%, команда 10%, резерв 12%. Раунд 3: производство 48%, маркетинг 28%, команда 13%, прочее 11%.</canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <table class="tbl">
+      <thead><tr><th>Раунд</th><th>Сумма</th><th>Доля партнёра</th><th>Цель продаж</th><th>Активы / Риск</th><th>Срок</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-green">Раунд 1</span></td><td style="font-weight:600">2 000 000 ₽</td><td>10%</td><td>500 шт/мес</td><td>88% / 12%</td><td>3 мес</td></tr>
+        <tr><td><span class="badge b-blue">Раунд 2</span></td><td style="font-weight:600">2 200 000 ₽</td><td>+10% (20%)</td><td>2 000 шт/мес</td><td>64% / 36%</td><td>3 мес</td></tr>
+        <tr><td><span class="badge b-gold">Раунд 3</span></td><td style="font-weight:600">3 600 000 ₽</td><td>+10% (30%)</td><td>5 000 шт/мес</td><td>55% / 45%</td><td>6 мес</td></tr>
+        <tr class="total"><td>Итого</td><td>7 800 000 ₽</td><td>30%</td><td></td><td>69% / 31%</td><td>12 мес</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="risk-row">
+    <div class="risk-box risk-green">
+      <p style="font-weight:500;margin-bottom:6px">Возвратные активы в Раунде 1</p>
+      <p>Оборудование (410 000 ₽) — ликвидационная стоимость ~250 000 ₽. Товар на складе (3 000 шт × 160 ₽) — 480 000 ₽ по себестоимости. Бренд и дизайн — нематериальные активы. Итого возвратных: ~730 000–900 000 ₽ из 2 000 000 ₽.</p>
+    </div>
+    <div class="risk-box risk-red">
+      <p style="font-weight:500;margin-bottom:6px">Безвозвратный риск</p>
+      <p>Маркетинг (блогеры, реклама, Telegram) — 243 000 ₽ в Раунде 1. Это 12% от суммы раунда. Если продукт не конвертит — именно эта сумма не возвращается. Остальные 88% — в активах которые можно реализовать.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<hr class="div">
+
+<!-- FORECAST -->
+<section id="forecast">
+<div class="wrap">
+  <div class="eyebrow">Прогноз продаж</div>
+  <h2 class="sec-title">12 месяцев помесячно</h2>
+  <p class="sec-body">Цена продавца 767 ₽. Валовая прибыль с флакона 373 ₽. Постоянные расходы 255 000 ₽/мес в Раундах 1–2.</p>
+
+  <div class="chart-box" style="margin-bottom:14px">
+    <div style="display:flex;gap:20px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:#1A7A52"></span>Прибыль мес, ₽</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:#C0392B"></span>Убыток мес, ₽</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span style="width:20px;height:2px;background:#1A5FA8;display:inline-block"></span>Накопленная, ₽</span>
+    </div>
+    <div style="position:relative;width:100%;height:300px">
+      <canvas id="forecastChart" role="img" aria-label="Прогноз прибыли по месяцам: убыток до месяца 3, выход в плюс на месяце 3, рост до 875 тысяч в месяце 12">Прогноз: выход в плюс на месяце 3</canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Мес</th><th>Продажи шт</th><th>Выручка ₽</th><th>Перем. расходы ₽</th><th>Пост. расходы ₽</th><th>Прибыль до налога ₽</th><th>Налог УСН 15% ₽</th><th>Чистая ₽</th><th>Накопленная ₽</th></tr></thead>
+      <tbody id="forecastTable"></tbody>
+    </table>
+  </div>
+
+  <div class="g3" style="margin-top:14px">
+    <div class="mc"><div class="ml">Выход в плюс (месяц)</div><div class="mv">М3</div><div class="ms">при 1 000 шт/мес</div></div>
+    <div class="mc"><div class="ml">Доход партнёра (30%) при 2 000 шт</div><div class="mv">~125к ₽/мес</div><div class="ms">после налогов</div></div>
+    <div class="mc"><div class="ml">Окупаемость Раунда 1</div><div class="mv">~14 мес</div><div class="ms">через дивиденды</div></div>
+  </div>
+</div>
+</section>
+
+<hr class="div">
+
+<!-- PARTNER -->
+<section id="partner">
+<div class="wrap">
+  <div class="eyebrow">Структура партнёрства</div>
+  <h2 class="sec-title">Четыре сущности</h2>
+  <p class="sec-body">Партнёрское соглашение строится на четырёх независимых осях. Каждая прописывается отдельно в договоре.</p>
+
+  <div class="partner-grid">
+    <div class="pg-cell head"></div>
+    <div class="pg-cell head r1c">Раунд 1</div>
+    <div class="pg-cell head r2c">Раунд 2</div>
+    <div class="pg-cell head r3c">Раунд 3</div>
+
+    <div class="pg-cell label">Доля в компании</div>
+    <div class="pg-cell r1c">Павел 10% · Ашот 90%<br><span style="font-size:11px;color:var(--hint)">фиксируется в уставе ООО</span></div>
+    <div class="pg-cell r2c">Павел 20% · Ашот 80%<br><span style="font-size:11px;color:var(--hint)">после факта внесения Раунда 2</span></div>
+    <div class="pg-cell r3c">Павел 30% · Ашот 70%<br><span style="font-size:11px;color:var(--hint)">после факта внесения Раунда 3</span></div>
+
+    <div class="pg-cell label">Распределение прибыли</div>
+    <div class="pg-cell r1c">Павел 10% · Ашот 90%</div>
+    <div class="pg-cell r2c">Павел 20% · Ашот 80%</div>
+    <div class="pg-cell r3c">Павел 30% · Ашот 70%</div>
+
+    <div class="pg-cell label">Владение активами</div>
+    <div class="pg-cell r1c">Оборудование в залоге у Павла до возврата вложений. Товар и бренд — пропорционально доле.</div>
+    <div class="pg-cell r2c">Залог снимается после возврата Р1. Все активы 80/20.</div>
+    <div class="pg-cell r3c">Все активы 70/30. Бренд, МП-карточки, оборудование.</div>
+
+    <div class="pg-cell label">Распределение убытков</div>
+    <div class="pg-cell r1c" style="color:var(--red)">Павел 100%<br><span style="font-size:11px;color:var(--hint)">максимальный риск = первый вход</span></div>
+    <div class="pg-cell r2c" style="color:var(--red)">Павел 100%<br><span style="font-size:11px;color:var(--hint)">бизнес ещё доказывает себя</span></div>
+    <div class="pg-cell r3c">50% / 50%<br><span style="font-size:11px;color:var(--hint)">есть история, риск делится</span></div>
+
+    <div class="pg-cell label">Право вето</div>
+    <div class="pg-cell" style="grid-column:2/5;font-size:12px;color:var(--muted);line-height:1.7">
+      Стратегия и продукт — <strong style="color:var(--text)">Ашот 100%</strong> · Команда и найм — <strong style="color:var(--text)">Ашот 100%</strong> · Расходы до 50 000 ₽ — <strong style="color:var(--text)">Ашот единолично</strong> · Расходы от 50 000 ₽ — <strong style="color:var(--text)">согласование обоих</strong> · Инвестиционные решения (новые раунды) — <strong style="color:var(--text)">последнее слово Павел</strong>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;background:var(--gold-bg);border-color:var(--gold-border)">
+    <p style="font-size:12px;color:var(--gold);font-weight:500;margin-bottom:6px">Залог оборудования</p>
+    <p style="font-size:13px;color:var(--muted);line-height:1.65">Оборудование (410 000 ₽) оформляется на юрлицо. Параллельно подписывается договор залога в пользу Павла. При ликвидации — оборудование продаётся первым, выручка идёт в счёт погашения вложений. После возврата инвестиций Раунда 1 — залог снимается. Стоимость оформления: 5 000–15 000 ₽ у юриста.</p>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em;text-transform:uppercase">Выход из партнёрства</p>
+    <table class="tbl">
+      <tr><td>Павел хочет выйти</td><td>Ашот выкупает долю по оценке бизнеса на момент выхода</td></tr>
+      <tr><td>Ашот хочет выкупить долю Павла</td><td>После возврата всех вложений + согласованной доходности</td></tr>
+      <tr><td>Продажа доли третьим лицам</td><td>Только с согласия партнёра — право преимущественного выкупа</td></tr>
+      <tr><td>Отчётность</td><td>Ежемесячно P&L + остатки + продажи. Ежеквартально сверка с планом.</td></tr>
+    </table>
+  </div>
+</div>
+</section>
+
+<hr class="div">
+
+<!-- TAX -->
+<section id="tax">
+<div class="wrap">
+  <div class="eyebrow">Налогообложение</div>
+  <h2 class="sec-title">Два варианта — одна рекомендация</h2>
+  <p class="sec-body">Выбор системы налогообложения напрямую влияет на чистую прибыль. Рассматриваем два варианта в зависимости от масштаба.</p>
+
+  <div class="tax-compare">
+    <div class="tax-card recommended">
+      <div class="tax-rec">РЕКОМЕНДУЕТСЯ · ДО РАУНДА 3</div>
+      <div class="tax-name">УСН Доходы минус расходы</div>
+      <div class="tax-rate">15%</div>
+      <div class="tax-items">
+        <div class="tax-item">Налог только с чистой прибыли после всех расходов</div>
+        <div class="tax-item">Лимит оборота 265 млн ₽/год — наши обороты далеко ниже</div>
+        <div class="tax-item">Все расходы (сырьё, тара, ФОТ, маркетинг) вычитаются</div>
+        <div class="tax-item">Простая отчётность, нет НДС</div>
+        <div class="tax-item">При прибыли 500 000 ₽/мес налог всего 75 000 ₽</div>
+      </div>
+    </div>
+    <div class="tax-card">
+      <div style="font-size:10px;background:var(--bg3);color:var(--muted);padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;letter-spacing:.04em">РАССМОТРЕТЬ С РАУНДА 3</div>
+      <div class="tax-name">ОСНО с НДС</div>
+      <div class="tax-rate">20% + НДС</div>
+      <div class="tax-items">
+        <div class="tax-item">Налог на прибыль 20% + НДС 20%</div>
+        <div class="tax-item">Выгоден только если поставщики работают с НДС</div>
+        <div class="tax-item">Большинство наших поставщиков на УСН — вычитать нечего</div>
+        <div class="tax-item">Сложная отчётность, нужен бухгалтер</div>
+        <div class="tax-item">Переходить при обороте от 100 млн ₽/год</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legal-grid" style="margin-top:24px">
+    <div class="legal-card">
+      <div class="badge b-green" style="margin-bottom:10px">РЕКОМЕНДУЕТСЯ</div>
+      <div class="legal-name">ООО</div>
+      <div class="tax-items">
+        <div class="tax-item">Доля Павла фиксируется в уставе — юридически защищена</div>
+        <div class="tax-item">Ограниченная ответственность — личное имущество не под риском</div>
+        <div class="tax-item">Залог оборудования оформляется чисто</div>
+        <div class="tax-item">Открытие 5–7 дней, госпошлина 4 000 ₽</div>
+        <div class="tax-item">Стандарт для привлечения инвестиций</div>
+      </div>
+    </div>
+    <div class="legal-card">
+      <div class="badge b-gray" style="margin-bottom:10px">АЛЬТЕРНАТИВА</div>
+      <div class="legal-name">ИП + Договор инвестиций</div>
+      <div class="tax-items">
+        <div class="tax-item">Быстрее открыть, меньше отчётности</div>
+        <div class="tax-item">Долю в ИП не оформить — только договорные отношения</div>
+        <div class="tax-item">Меньше правовой защиты для инвестора</div>
+        <div class="tax-item">Подходит для быстрого старта до открытия ООО</div>
+        <div class="tax-item">Обсуждается с юристом</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<hr class="div">
+
+<div style="text-align:center;padding:6rem 2.5rem;background:var(--bg)">
+  <p style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:16px">Следующий шаг</p>
+  <h2 style="font-size:clamp(28px,4vw,48px);font-weight:700;color:var(--text);margin-bottom:12px;line-height:1.15">Готовы обсудить<br>условия партнёрства?</h2>
+  <p style="font-size:15px;color:var(--muted);margin-bottom:40px">Все цифры верифицированы. Смета согласована. Партнёрское соглашение готовится у юриста.</p>
+  <a href="mailto:invest@momentumx.ru" style="display:inline-block;padding:14px 40px;background:var(--gold);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:500;letter-spacing:.06em;text-decoration:none">Написать основателю</a>
+</div>
+
+<footer>
+  <p>© 2026 Momentum X · Конфиденциальный финансовый документ</p>
+  <div class="brand">MX</div>
+</footer>
+
+<script>
+const months=['М1','М2','М3','М4','М5','М6','М7','М8','М9','М10','М11','М12'];
+const sales=[0,500,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500];
+const priceS=767,varCostUnit=394,fixedM=255000;
+const profits=sales.map(s=>Math.round(s*(priceS-varCostUnit)-fixedM));
+const taxes=profits.map(p=>p>0?Math.round(p*0.15):0);
+const nets=profits.map((p,i)=>p>0?p-taxes[i]:p);
+let cum=-2000000;
+const cums=[];
+nets.forEach(n=>{cum+=n;cums.push(cum);});
+
+const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+const tc=isDark?'#A8A69E':'#6B6960';
+const gc=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)';
+
+new Chart(document.getElementById('roundsChart'),{
+  type:'bar',
+  data:{
+    labels:['Раунд 1','Раунд 2','Раунд 3'],
+    datasets:[
+      {label:'Оборудование',data:[410000,0,0],backgroundColor:'#639922',borderRadius:2},
+      {label:'Производство',data:[480270,960540,1755000],backgroundColor:'#1A7A52',borderRadius:2},
+      {label:'Маркетинг',data:[540000,750000,1000000],backgroundColor:'#C0392B',borderRadius:2},
+      {label:'Команда',data:[225000,225000,450000],backgroundColor:'#1A5FA8',borderRadius:2},
+      {label:'Прочее + резерв',data:[344730,264460,395000],backgroundColor:'#A8A69E',borderRadius:2},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{stacked:true,ticks:{color:tc,font:{size:12}},grid:{display:false}},
+      y:{stacked:true,ticks:{callback:v=>(v/1000000).toFixed(1)+'M',color:tc,font:{size:11}},grid:{color:gc}}
+    }
+  }
+});
+
+new Chart(document.getElementById('forecastChart'),{
+  type:'bar',
+  data:{
+    labels:months,
+    datasets:[
+      {label:'Прибыль',data:nets.map(n=>n>0?n:0),backgroundColor:'#1A7A52',borderRadius:2,yAxisID:'y1'},
+      {label:'Убыток',data:nets.map(n=>n<0?n:0),backgroundColor:'#C0392B',borderRadius:2,yAxisID:'y1'},
+      {label:'Накопленная',data:cums,type:'line',borderColor:'#1A5FA8',backgroundColor:'transparent',pointRadius:3,pointBackgroundColor:'#1A5FA8',tension:0.3,borderWidth:2,yAxisID:'y1'}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      y1:{ticks:{callback:v=>{const a=Math.abs(v);return (v<0?'-':'')+(a>=1000000?(a/1000000).toFixed(1)+'M':(a/1000).toFixed(0)+'К');},color:tc,font:{size:10}},grid:{color:gc}},
+      x:{ticks:{color:tc,font:{size:11}},grid:{display:false}}
+    }
+  }
+});
+
+const tbody=document.getElementById('forecastTable');
+months.forEach((m,i)=>{
+  const s=sales[i],r=s*priceS,vc=s*varCostUnit,p=profits[i],t=taxes[i],n=nets[i],c=cums[i];
+  const row=document.createElement('tr');
+  row.innerHTML=`<td>${m}</td><td>${s.toLocaleString('ru')}</td><td>${r.toLocaleString('ru')} ₽</td><td>${vc.toLocaleString('ru')} ₽</td><td>${fixedM.toLocaleString('ru')} ₽</td><td class="${p>=0?'pos':'neg'}">${p.toLocaleString('ru')} ₽</td><td style="color:var(--muted)">${t>0?t.toLocaleString('ru')+' ₽':'—'}</td><td class="${n>=0?'pos':'neg'}">${n.toLocaleString('ru')} ₽</td><td class="${c>=0?'pos':'neg'}">${c.toLocaleString('ru')} ₽</td>`;
+  tbody.appendChild(row);
+});
+</script>
+</body>
+</html>
